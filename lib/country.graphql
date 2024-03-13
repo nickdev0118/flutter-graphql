@@ -1,0 +1,6 @@
+query getAllCountries {
+  countries {
+    name
+    capital
+  }
+}

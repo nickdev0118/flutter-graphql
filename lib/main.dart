@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:graphql/client.dart';
-import 'package:http/http.dart' as http;
-import 'country.graphql.dart';
+import 'package:my_flutter_app/country.graphql.dart';
 
-Future<List<Map<String, dynamic>>> fetchCountries() async {
+Future<List<Query$getAllCountries$countries>> fetchCountries() async {
   final GraphQLClient client = GraphQLClient(
     link: HttpLink('https://countries.trevorblades.com/'),
     cache: GraphQLCache(),
@@ -19,14 +18,11 @@ Future<List<Map<String, dynamic>>> fetchCountries() async {
       }
     '''),
   );
-
   final QueryResult result = await client.query(options);
-  if (result.hasException) {
-    print('GraphQL Error: ${result.exception.toString()}');
-    return [];
-  } else {
-    return List<Map<String, dynamic>>.from(result.data?['countries'] ?? []);
-  }
+
+  return (result.data?['countries'] as List)
+      .map((e) => Query$getAllCountries$countries.fromJson(e))
+      .toList();
 }
 
 Future<String> getCountryNameByCode(String countryCode) async {
@@ -70,7 +66,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Country Names and Capitals'),
     );
   }
 }
@@ -85,7 +81,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late Future<List<Map<String, dynamic>>> _countriesFuture;
+  late Future<List<Query$getAllCountries$countries>> _countriesFuture;
   late String _countryName;
 
   @override
@@ -146,31 +142,31 @@ class _MyHomePageState extends State<MyHomePage> {
         children: [
           ElevatedButton(
             onPressed: _getPSCountryName,
-            child: Text('Get Country Name via Country Code: "PS"'),
+            child: const Text('Get Country Name via Country Code: "PS"'),
           ),
           ElevatedButton(
             onPressed: _getTNCountryName,
-            child: Text('Get Country Name via Country Code: "TN"'),
+            child: const Text('Get Country Name via Country Code: "TN"'),
           ),
           Expanded(
-            child: FutureBuilder<List<Map<String, dynamic>>>(
+            child: FutureBuilder<List<Query$getAllCountries$countries>>(
               future: _countriesFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
+                  return const Center(
                     child: CircularProgressIndicator(),
                   );
                 } else if (snapshot.hasError) {
                   return Text('Error: ${snapshot.error}');
                 } else {
-                  final List<Map<String, dynamic>> countries = snapshot.data!;
+                  final countries = snapshot.data!;
                   return ListView.builder(
                     itemCount: countries.length,
                     itemBuilder: (context, index) {
                       final country = countries[index];
                       return ListTile(
-                        title: Text(country['name'] ?? ''),
-                        subtitle: Text(country['capital'] ?? ''),
+                        title: Text(country.name ?? ''),
+                        subtitle: Text(country.capital ?? ''),
                       );
                     },
                   );
